@@ -24,11 +24,11 @@ export const metadata: Metadata = {
     'electrical maintenance',
     'ELSIM Engineering',
   ],
-  alternates: { canonical: '/blog' },
+  // Canonical comes from pageOpenGraph (do not set alternates twice — TS build error).
   ...pageOpenGraph({
     title: blogTitle,
     description: blogDescription,
-    path: '/blog',
+    path: '/blog/',
     image: media.work.transformerKioskInstallation,
   }),
   robots: {
@@ -46,7 +46,7 @@ export default function BlogPage() {
     '@type': 'Blog',
     name: 'ELSIM Engineering Blog',
     description: blogDescription,
-    url: `${siteUrl}/blog`,
+    url: `${siteUrl}/blog/`,
     publisher: {
       '@type': 'Organization',
       name: 'ELSIM Engineering',
@@ -58,7 +58,7 @@ export default function BlogPage() {
       description: post.excerpt,
       datePublished: post.publishedAt,
       dateModified: post.updatedAt ?? post.publishedAt,
-      url: `${siteUrl}/blog/${post.slug}`,
+      url: `${siteUrl}/blog/${post.slug}/`,
       image: `${siteUrl}${post.image.src}`,
       author: { '@type': 'Organization', name: post.author },
     })),
