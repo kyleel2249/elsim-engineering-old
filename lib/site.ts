@@ -4,12 +4,19 @@
  */
 
 /**
- * Canonical origin. Prefer www so brand and search listings converge on one host.
- * Override with NEXT_PUBLIC_SITE_URL in Cloudflare if the apex must be primary.
+ * Canonical origin used in sitemap.xml, robots.txt, Open Graph and JSON-LD.
+ *
+ * IMPORTANT (Google Search Console):
+ * Sitemap <loc> hosts must match the property where the sitemap is submitted.
+ * - URL-prefix property https://elsimengineering.com  → use this apex host
+ * - URL-prefix property https://www.elsimengineering.com → set
+ *   NEXT_PUBLIC_SITE_URL=https://www.elsimengineering.com in Pages env
+ * - Never submit a pages.dev sitemap that lists custom-domain URLs (or the reverse)
+ *
  * No trailing slash.
  */
 export const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.elsimengineering.com'
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://elsimengineering.com'
 ).replace(/\/$/, '');
 
 /**
