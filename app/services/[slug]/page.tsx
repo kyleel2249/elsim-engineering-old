@@ -4,10 +4,11 @@ import type { Metadata } from 'next';
 import { getServiceBySlug, getAllServiceSlugs } from '@/lib/data/services';
 import { getProjectsByCategory } from '@/lib/data/projects';
 import { company } from '@/lib/data/company';
+import { getSeoTargetBySlug } from '@/lib/data/seo-master-map';
 import { Reveal } from '@/components/motion/Reveal';
 import { WorkGallery } from '@/components/media/WorkGallery';
 import { getWorkByCategory, media } from '@/lib/data/media';
-import { pageOpenGraph, serviceKeywords, absolutePageUrl } from '@/lib/seo';
+import { pageOpenGraph, absolutePageUrl } from '@/lib/seo';
 import { siteUrl } from '@/lib/site';
 
 interface Props {
@@ -22,21 +23,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const service = getServiceBySlug(params.slug);
   if (!service) return { title: 'Service not found' };
 
+  const seo = getSeoTargetBySlug('service', service.slug);
   const categoryPhotos = getWorkByCategory(service.slug);
   const image = categoryPhotos[0] ?? media.work.panelWiringTeam;
-  const title = `${service.title} in Ghana & West Africa`;
-  const description = `${service.shortDescription} Delivered by ELSIM Engineering from Accra across Ghana and West Africa.`;
+  const title = seo?.metaTitle ?? `${service.title} in Ghana & West Africa | ELSIM Engineering`;
+  const description =
+    seo?.metaDescription ??
+    `${service.shortDescription} Delivered by ELSIM Engineering from Accra across Ghana and West Africa.`;
+  const keywords = seo
+    ? [seo.primary, ...seo.secondary, ...seo.longTail]
+    : [service.title, 'ELSIM Engineering', 'electrical engineering Ghana'];
+
+  const altImage = image.alt
+    ? image
+    : {
+        ...image,
+        alt: seo?.imageAltKeywords[0] ?? `${service.title} — ELSIM Engineering Ghana`,
+      };
 
   return {
     title,
     description,
-    keywords: serviceKeywords(service.title, service.features.slice(0, 5)),
-    alternates: { canonical: `/services/${service.slug}/` },
+    keywords,
     ...pageOpenGraph({
-      title: `${title} | ELSIM Engineering`,
+      title,
       description,
       path: `/services/${service.slug}/`,
-      image,
+      image: altImage,
       type: 'article',
     }),
   };
@@ -46,6 +59,7 @@ export default function ServiceDetailPage({ params }: Props) {
   const service = getServiceBySlug(params.slug);
   if (!service) notFound();
 
+  const seo = getSeoTargetBySlug('service', service.slug);
   const relatedProjects = getProjectsByCategory(service.slug).slice(0, 3);
   const serviceUrl = absolutePageUrl(`/services/${service.slug}`);
 
@@ -53,8 +67,9 @@ export default function ServiceDetailPage({ params }: Props) {
     '@context': 'https://schema.org',
     '@type': 'Service',
     '@id': `${serviceUrl}#service`,
-    name: service.title,
-    description: service.shortDescription,
+    name: seo?.primary ?? service.title,
+    alternateName: seo?.secondary.slice(0, 5),
+    description: seo?.metaDescription ?? service.shortDescription,
     serviceType: service.title,
     url: serviceUrl,
     provider: {
@@ -123,7 +138,7 @@ export default function ServiceDetailPage({ params }: Props) {
           className="mt-8 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl"
           style={{ color: 'var(--theme-text)' }}
         >
-          {service.title}
+          {seo?.h1 ?? service.title}
         </h1>
         <p className="mt-4 text-lg leading-relaxed" style={{ color: 'var(--theme-text-muted)' }}>
           {service.shortDescription}
@@ -165,7 +180,7 @@ export default function ServiceDetailPage({ params }: Props) {
           <Reveal>
             <section className="mt-14">
               <h2 className="font-display text-2xl font-semibold" style={{ color: 'var(--theme-text)' }}>
-                How delivery runs
+                Design, installation, testing and commissioning
               </h2>
               <ol className="mt-5 space-y-0">
                 {service.process.map((step, i) => (
@@ -208,7 +223,7 @@ export default function ServiceDetailPage({ params }: Props) {
               }}
             >
               <h2 className="font-display text-lg font-semibold" style={{ color: 'var(--theme-text)' }}>
-                Safety considerations
+                Electrical safety considerations
               </h2>
               <ul className="mt-3 space-y-2">
                 {service.safetyNotes.map((note) => (
@@ -272,7 +287,7 @@ export default function ServiceDetailPage({ params }: Props) {
                 Field photography
               </h2>
               <p className="mt-1.5 text-sm" style={{ color: 'var(--theme-text-muted)' }}>
-                ELSIM crews carrying out {service.title.toLowerCase()} work.
+                ELSIM crews carrying out {service.title.toLowerCase()} work across Ghana and West Africa.
               </p>
               <WorkGallery photos={getWorkByCategory(service.slug)} className="mt-5" />
             </section>
