@@ -8,6 +8,7 @@ import { BackToTop } from '@/components/motion/BackToTop';
 import { fontVariables } from '@/lib/fonts';
 import { company } from '@/lib/data/company';
 import { media } from '@/lib/data/media';
+import { services } from '@/lib/data/services';
 import { siteUrl, isIndexable, GA_MEASUREMENT_ID } from '@/lib/site';
 import './globals.css';
 
@@ -96,70 +97,136 @@ export const viewport: Viewport = {
   colorScheme: 'light dark',
 };
 
+const organizationId = `${siteUrl}/#organization`;
+const websiteId = `${siteUrl}/#website`;
+
 /**
- * Organisation / engineering-business structured data.
- * Helps search engines and AI crawlers (GPTBot, ClaudeBot, Google-Extended)
- * map entity relationships for ELSIM Engineering.
- * ProfessionalService is the Schema.org type Google recognises; EngineeringBusiness
- * is included as an additional type for AI entity mapping.
+ * Optimized JSON-LD graph for search engines and AI crawlers.
+ * Uses @graph so Organization and WebSite are linked as discrete entities
+ * with stable @id references.
  */
-const organisationJsonLd = {
+const siteJsonLd = {
   '@context': 'https://schema.org',
-  '@type': ['ProfessionalService', 'LocalBusiness'],
-  additionalType: 'https://schema.org/EngineeringBusiness',
-  '@id': `${siteUrl}/#organization`,
-  name: 'ELSIM Engineering',
-  legalName: company.legalName,
-  alternateName: company.name,
-  description:
-    'Premium electrical, energy, and technical engineering services in Ghana and West Africa.',
-  url: siteUrl,
-  logo: {
-    '@type': 'ImageObject',
-    url: `${siteUrl}${media.logo.src}`,
-  },
-  image: `${siteUrl}${socialImage.src}`,
-  email: company.email,
-  telephone: company.phones.map((p) => p.tel),
-  slogan: company.tagline,
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: company.address.line1,
-    addressLocality: company.address.city,
-    addressRegion: 'Greater Accra',
-    addressCountry: 'GH',
-  },
-  geo: {
-    '@type': 'GeoCoordinates',
-    addressCountry: 'GH',
-  },
-  areaServed: company.regions.map((name) => ({ '@type': 'Country', name })),
-  contactPoint: [
+  '@graph': [
     {
-      '@type': 'ContactPoint',
-      contactType: 'customer support',
+      '@type': ['ProfessionalService', 'LocalBusiness'],
+      additionalType: 'https://schema.org/EngineeringBusiness',
+      '@id': organizationId,
+      name: 'ELSIM Engineering',
+      legalName: company.legalName,
+      alternateName: ['ELSIM Engineering Firm', 'ELSIM Engineering Firm Ltd'],
+      description:
+        'Premium electrical, energy, and technical engineering services in Ghana and West Africa.',
+      url: siteUrl,
+      logo: {
+        '@type': 'ImageObject',
+        '@id': `${siteUrl}/#logo`,
+        url: `${siteUrl}${media.logo.src}`,
+        caption: company.name,
+      },
+      image: {
+        '@type': 'ImageObject',
+        url: `${siteUrl}${socialImage.src}`,
+        width: socialImage.width,
+        height: socialImage.height,
+      },
       email: company.email,
-      telephone: company.phones[0]?.tel,
-      areaServed: 'GH',
-      availableLanguage: ['English'],
+      telephone: company.phones.map((p) => p.tel),
+      slogan: company.tagline,
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: company.address.line1,
+        addressLocality: company.address.city,
+        addressRegion: 'Greater Accra',
+        addressCountry: 'GH',
+      },
+      areaServed: company.regions.map((name) => ({
+        '@type': 'Country',
+        name,
+      })),
+      contactPoint: [
+        {
+          '@type': 'ContactPoint',
+          contactType: 'customer support',
+          email: company.email,
+          telephone: company.phones[0]?.tel,
+          areaServed: company.regions,
+          availableLanguage: ['en'],
+        },
+        {
+          '@type': 'ContactPoint',
+          contactType: 'sales',
+          url: `${siteUrl}/quotation`,
+          email: company.email,
+          telephone: company.phones[0]?.tel,
+          areaServed: company.regions,
+          availableLanguage: ['en'],
+        },
+      ],
+      sameAs: [
+        company.socials.linkedin,
+        company.socials.facebook,
+        company.socials.tiktok,
+      ],
+      knowsAbout: [
+        'Electrical Engineering',
+        'Solar Power Grid Systems',
+        'Industrial Infrastructure',
+        'Power distribution and transformers',
+        'Electrical inspection and maintenance',
+        'Electrical consulting and audits',
+      ],
+      hasOfferCatalog: {
+        '@type': 'OfferCatalog',
+        name: 'ELSIM Engineering services',
+        itemListElement: services.map((service, index) => ({
+          '@type': 'OfferCatalog',
+          name: service.title,
+          position: index + 1,
+          itemListElement: [
+            {
+              '@type': 'Offer',
+              itemOffered: {
+                '@type': 'Service',
+                name: service.title,
+                description: service.shortDescription,
+                url: `${siteUrl}/services/${service.slug}`,
+                provider: { '@id': organizationId },
+              },
+            },
+          ],
+        })),
+      },
+      priceRange: '$$',
+      foundingLocation: {
+        '@type': 'Place',
+        name: 'Accra, Ghana',
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Accra',
+          addressRegion: 'Greater Accra',
+          addressCountry: 'GH',
+        },
+      },
+    },
+    {
+      '@type': 'WebSite',
+      '@id': websiteId,
+      url: siteUrl,
+      name: 'ELSIM Engineering',
+      description: siteDescription,
+      publisher: { '@id': organizationId },
+      inLanguage: 'en-GH',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: `${siteUrl}/services?q={search_term_string}`,
+        },
+        'query-input': 'required name=search_term_string',
+      },
     },
   ],
-  sameAs: [
-    company.socials.linkedin,
-    company.socials.facebook,
-    company.socials.tiktok,
-  ],
-  knowsAbout: [
-    'Electrical Engineering',
-    'Solar Power Grid Systems',
-    'Industrial Infrastructure',
-    'Electrical installations',
-    'Solar photovoltaic systems',
-    'Power distribution and transformers',
-    'Electrical inspection and maintenance',
-    'Electrical consulting and audits',
-  ],
-  priceRange: '$$',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -173,7 +240,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organisationJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
         />
       </head>
       <body className="min-h-screen font-body antialiased">
