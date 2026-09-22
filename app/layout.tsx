@@ -9,14 +9,16 @@ import { fontVariables } from '@/lib/fonts';
 import { company } from '@/lib/data/company';
 import { media } from '@/lib/data/media';
 import { services } from '@/lib/data/services';
+import { SITE_KEYWORDS } from '@/lib/seo';
 import { siteUrl, isIndexable, GA_MEASUREMENT_ID } from '@/lib/site';
 import './globals.css';
 
-const siteTitle = 'ELSIM Engineering — Electrical, Energy & Technical Services in Ghana';
+const siteTitle =
+  'ELSIM Engineering | Electrical Engineering, Solar & Power Distribution in Ghana';
 const siteDescription =
-  'ELSIM Engineering designs, installs, tests and maintains electrical, solar and power-distribution systems for commercial and industrial clients across Ghana and West Africa.';
+  'ELSIM Engineering (www.elsimengineering.com) designs, installs, tests and maintains electrical installations, solar power systems, transformers and power distribution for commercial and industrial clients across Ghana and West Africa.';
 const ogDescription =
-  'Electrical, solar, power-distribution and consulting engineering across Ghana and West Africa.';
+  'Electrical installations, solar PV, transformer projects, maintenance and consulting across Ghana, Togo, Côte d\'Ivoire and West Africa — ELSIM Engineering.';
 
 /** Fixed, branded card for link previews — see the comment on media.og. */
 const socialImage = media.og;
@@ -27,21 +29,19 @@ export const metadata: Metadata = {
   applicationName: 'ELSIM Engineering',
   title: {
     default: siteTitle,
-    template: '%s · ELSIM Engineering',
+    template: '%s · ELSIM Engineering Ghana',
   },
   description: siteDescription,
-  keywords: [
-    'electrical engineering Ghana',
-    'solar installation Accra',
-    'power distribution West Africa',
-    'transformer installation',
-    'electrical maintenance Ghana',
-    'ELSIM Engineering',
-  ],
-  authors: [{ name: company.name }],
+  keywords: SITE_KEYWORDS,
+  authors: [{ name: company.name, url: siteUrl }],
   creator: company.name,
   publisher: company.name,
-  alternates: { canonical: '/' },
+  category: 'Engineering',
+  classification: 'Electrical engineering services',
+  alternates: {
+    canonical: '/',
+    // Prefer www; apex should redirect to www at the DNS/host layer.
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     title: siteTitle,
     description: ogDescription,
     url: siteUrl,
-    siteName: company.name,
+    siteName: 'ELSIM Engineering',
     locale: 'en_GH',
     type: 'website',
     images: [
@@ -85,7 +85,13 @@ export const metadata: Metadata = {
     ? {
         index: true,
         follow: true,
-        googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+        googleBot: {
+          index: true,
+          follow: true,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+          'max-video-preview': -1,
+        },
       }
     : { index: false, follow: false },
 };
@@ -114,9 +120,14 @@ const siteJsonLd = {
       '@id': organizationId,
       name: 'ELSIM Engineering',
       legalName: company.legalName,
-      alternateName: ['ELSIM Engineering Firm', 'ELSIM Engineering Firm Ltd'],
+      alternateName: [
+        'ELSIM Engineering Firm',
+        'ELSIM Engineering Firm Ltd',
+        'elsimengineering.com',
+        'www.elsimengineering.com',
+      ],
       description:
-        'Premium electrical, energy, and technical engineering services in Ghana and West Africa.',
+        'Premium electrical, energy, and technical engineering services in Ghana and West Africa — installations, solar, power distribution, maintenance and consulting.',
       url: siteUrl,
       logo: {
         '@type': 'ImageObject',
@@ -156,7 +167,7 @@ const siteJsonLd = {
         {
           '@type': 'ContactPoint',
           contactType: 'sales',
-          url: `${siteUrl}/quotation`,
+          url: `${siteUrl}/quotation/`,
           email: company.email,
           telephone: company.phones[0]?.tel,
           areaServed: company.regions,
@@ -175,6 +186,7 @@ const siteJsonLd = {
         'Power distribution and transformers',
         'Electrical inspection and maintenance',
         'Electrical consulting and audits',
+        ...services.map((s) => s.title),
       ],
       hasOfferCatalog: {
         '@type': 'OfferCatalog',
@@ -190,8 +202,12 @@ const siteJsonLd = {
                 '@type': 'Service',
                 name: service.title,
                 description: service.shortDescription,
-                url: `${siteUrl}/services/${service.slug}`,
+                url: `${siteUrl}/services/${service.slug}/`,
                 provider: { '@id': organizationId },
+                areaServed: company.regions.map((name) => ({
+                  '@type': 'Country',
+                  name,
+                })),
               },
             },
           ],
@@ -214,6 +230,7 @@ const siteJsonLd = {
       '@id': websiteId,
       url: siteUrl,
       name: 'ELSIM Engineering',
+      alternateName: 'www.elsimengineering.com',
       description: siteDescription,
       publisher: { '@id': organizationId },
       inLanguage: 'en-GH',
@@ -221,7 +238,7 @@ const siteJsonLd = {
         '@type': 'SearchAction',
         target: {
           '@type': 'EntryPoint',
-          urlTemplate: `${siteUrl}/services?q={search_term_string}`,
+          urlTemplate: `${siteUrl}/services/?q={search_term_string}`,
         },
         'query-input': 'required name=search_term_string',
       },
@@ -253,8 +270,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <BackToTop />
         </ThemeProvider>
 
-        {/* Google Analytics — property G-E8Z0XCC54Q. Loads after hydration so it
-            never blocks first paint, and is skipped entirely when unset. */}
         {GA_MEASUREMENT_ID && (
           <>
             <Script
