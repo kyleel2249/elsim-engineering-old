@@ -1,5 +1,4 @@
-import { company } from '@/lib/data/company';
-import { services } from '@/lib/data/services';
+import { allMappedKeywords, getSeoTarget, type SeoTarget } from '@/lib/data/seo-master-map';
 import { siteUrl } from '@/lib/site';
 
 interface OgImageInput {
@@ -18,43 +17,10 @@ interface PageOpenGraphOptions {
   type?: 'website' | 'article';
 }
 
-/**
- * Core search phrases derived from real services, regions and brand.
- * Used in root metadata and composed into page-level keyword lists.
- * Prefer natural language in titles/descriptions; keywords support crawlers
- * that still read the meta keywords field and reinforce topical focus.
- */
-export const SITE_KEYWORDS: string[] = [
-  'ELSIM Engineering',
-  'ELSIM Engineering Firm',
-  'elsimengineering.com',
-  'www.elsimengineering.com',
-  'electrical engineering Ghana',
-  'electrical engineering Accra',
-  'electrical contractor Ghana',
-  'electrical installations Ghana',
-  'solar installation Accra',
-  'solar power solutions Ghana',
-  'solar PV West Africa',
-  'power distribution Ghana',
-  'transformer installation Ghana',
-  'transformer installation West Africa',
-  'electrical maintenance Ghana',
-  'electrical inspection Accra',
-  'electrical consulting Ghana',
-  'electrical audit Ghana',
-  'industrial electrical contractor',
-  'commercial electrical services Accra',
-  'ECG Class B contractor',
-  ...company.regions.flatMap((region) => [
-    `electrical engineering ${region}`,
-    `power systems ${region}`,
-  ]),
-  ...services.map((s) => s.title),
-  ...services.map((s) => `${s.title} Ghana`),
-];
+/** Full keyword set from the SEO Master Map (brand, services, geo, long-tail). */
+export const SITE_KEYWORDS: string[] = allMappedKeywords();
 
-/** Keywords for a single service page — service terms + geography + brand. */
+/** Keywords for a single service page — map entry when present, else fallback. */
 export function serviceKeywords(serviceTitle: string, extra: string[] = []): string[] {
   return [
     serviceTitle,
@@ -83,12 +49,36 @@ export function canonicalPath(path: string): string {
 }
 
 /**
+ * Metadata fields from the Keyword Master Map for a given path.
+ * Falls back to provided title/description when no map entry exists.
+ */
+export function metadataFromSeoMap(
+  path: string,
+  fallback?: { title?: string; description?: string; keywords?: string[] }
+): {
+  title: string;
+  description: string;
+  keywords: string[];
+  target?: SeoTarget;
+} {
+  const target = getSeoTarget(path);
+  if (target) {
+    return {
+      title: target.metaTitle,
+      description: target.metaDescription,
+      keywords: [target.primary, ...target.secondary, ...target.longTail],
+      target,
+    };
+  }
+  return {
+    title: fallback?.title ?? 'ELSIM Engineering',
+    description: fallback?.description ?? '',
+    keywords: fallback?.keywords ?? SITE_KEYWORDS.slice(0, 20),
+  };
+}
+
+/**
  * Build matching `openGraph`, `twitter`, and `alternates.canonical` for a page.
- *
- * Next.js merges metadata shallowly: a page that omits `alternates.canonical`
- * can inherit the root layout's `/` canonical. Spreading this helper on every
- * route page sets the correct self-referencing canonical and complete social
- * previews (including images).
  */
 export function pageOpenGraph({
   title,
@@ -131,3 +121,5 @@ export function pageOpenGraph({
     },
   };
 }
+
+export { getSeoTarget, getSeoTargetBySlug, keywordsForPath } from '@/lib/data/seo-master-map';
