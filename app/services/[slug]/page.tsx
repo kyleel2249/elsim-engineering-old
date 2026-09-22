@@ -3,10 +3,12 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getServiceBySlug, getAllServiceSlugs } from '@/lib/data/services';
 import { getProjectsByCategory } from '@/lib/data/projects';
+import { company } from '@/lib/data/company';
 import { Reveal } from '@/components/motion/Reveal';
 import { WorkGallery } from '@/components/media/WorkGallery';
 import { getWorkByCategory, media } from '@/lib/data/media';
-import { pageOpenGraph } from '@/lib/seo';
+import { pageOpenGraph, serviceKeywords, absolutePageUrl } from '@/lib/seo';
+import { siteUrl } from '@/lib/site';
 
 interface Props {
   params: { slug: string };
@@ -22,15 +24,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const categoryPhotos = getWorkByCategory(service.slug);
   const image = categoryPhotos[0] ?? media.work.panelWiringTeam;
+  const title = `${service.title} in Ghana & West Africa`;
+  const description = `${service.shortDescription} Delivered by ELSIM Engineering from Accra across Ghana and West Africa.`;
 
   return {
-    title: service.title,
-    description: service.shortDescription,
-    alternates: { canonical: `/services/${service.slug}` },
+    title,
+    description,
+    keywords: serviceKeywords(service.title, service.features.slice(0, 5)),
+    alternates: { canonical: `/services/${service.slug}/` },
     ...pageOpenGraph({
-      title: `${service.title} — ELSIM Engineering`,
-      description: service.shortDescription,
-      path: `/services/${service.slug}`,
+      title: `${title} | ELSIM Engineering`,
+      description,
+      path: `/services/${service.slug}/`,
       image,
       type: 'article',
     }),
@@ -42,15 +47,29 @@ export default function ServiceDetailPage({ params }: Props) {
   if (!service) notFound();
 
   const relatedProjects = getProjectsByCategory(service.slug).slice(0, 3);
+  const serviceUrl = absolutePageUrl(`/services/${service.slug}`);
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Service',
+    '@id': `${serviceUrl}#service`,
     name: service.title,
     description: service.shortDescription,
     serviceType: service.title,
-    provider: { '@type': 'Organization', name: 'ELSIM Engineering' },
-    areaServed: { '@type': 'Country', name: 'Ghana' },
+    url: serviceUrl,
+    provider: {
+      '@type': 'ProfessionalService',
+      name: 'ELSIM Engineering',
+      url: siteUrl,
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Accra',
+        addressRegion: 'Greater Accra',
+        addressCountry: 'GH',
+      },
+    },
+    areaServed: company.regions.map((name) => ({ '@type': 'Country', name })),
+    termsOfService: `${siteUrl}/terms/`,
   };
 
   const faqJsonLd =
@@ -148,7 +167,6 @@ export default function ServiceDetailPage({ params }: Props) {
               <h2 className="font-display text-2xl font-semibold" style={{ color: 'var(--theme-text)' }}>
                 How delivery runs
               </h2>
-              {/* Numbered because this genuinely is a sequence. */}
               <ol className="mt-5 space-y-0">
                 {service.process.map((step, i) => (
                   <li key={step} className="flex gap-5">
