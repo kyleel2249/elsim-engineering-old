@@ -5,20 +5,29 @@ import { getPublishedPosts } from '@/lib/data/blog';
 import { siteUrl } from '@/lib/site';
 
 /**
- * Absolute URL helper. Static export uses trailingSlash: true, so every path
- * except the origin root ends with `/` — matching the live HTML routes Google
- * will crawl (non-slash URLs 308 to the slash form).
+ * Build an absolute <loc> under siteUrl only.
+ *
+ * Google rejects sitemap entries whose host does not match the Search Console
+ * property (and rejects cross-host locs, e.g. www URLs in a non-www property,
+ * or custom-domain URLs listed in a pages.dev sitemap).
+ *
+ * Static export uses trailingSlash: true — path pages end with `/`.
  */
 function pageUrl(path = ''): string {
-  if (!path || path === '/') return siteUrl;
+  const base = siteUrl.replace(/\/$/, '');
+  if (!path || path === '/') {
+    // Prefer trailing slash on the origin loc for consistency with export routes.
+    return `${base}/`;
+  }
   const normalized = path.startsWith('/') ? path : `/${path}`;
-  return `${siteUrl}${normalized.endsWith('/') ? normalized : `${normalized}/`}`;
+  const withSlash = normalized.endsWith('/') ? normalized : `${normalized}/`;
+  return `${base}${withSlash}`;
 }
 
 /**
  * Sitemap is generated at build time from live data modules.
- * Adding a post in lib/data/blog.ts automatically adds /blog/[slug]/ here
- * on the next deploy — no manual sitemap edit required.
+ * Set NEXT_PUBLIC_SITE_URL to the exact origin verified in Search Console
+ * before deploying (https://elsimengineering.com or https://www.elsimengineering.com).
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
