@@ -12,7 +12,7 @@ interface OgImageInput {
 interface PageOpenGraphOptions {
   title: string;
   description: string;
-  /** Path from the site root, e.g. '/about'. */
+  /** Path from the site root, e.g. '/about' or '/about/'. */
   path: string;
   image?: OgImageInput;
   type?: 'website' | 'article';
@@ -70,19 +70,25 @@ export function serviceKeywords(serviceTitle: string, extra: string[] = []): str
 
 /** Absolute page URL with trailing slash (matches static export routes). */
 export function absolutePageUrl(path: string): string {
-  if (!path || path === '/') return siteUrl;
+  if (!path || path === '/') return `${siteUrl}/`;
   const normalized = path.startsWith('/') ? path : `/${path}`;
   return `${siteUrl}${normalized.endsWith('/') ? normalized : `${normalized}/`}`;
 }
 
+/** Path-only canonical for Metadata.alternates (leading slash, trailing slash). */
+export function canonicalPath(path: string): string {
+  if (!path || path === '/') return '/';
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return normalized.endsWith('/') ? normalized : `${normalized}/`;
+}
+
 /**
- * Build matching `openGraph` and `twitter` metadata blocks for a page.
+ * Build matching `openGraph`, `twitter`, and `alternates.canonical` for a page.
  *
- * Next.js's Metadata API does NOT propagate a page's top-level `title` /
- * `description` into `openGraph`/`twitter` automatically, and if a page
- * defines its own `openGraph` object at all, it fully replaces the root
- * layout's — including `images`. Every page that defines its own `openGraph`
- * must spread this helper so link previews stay complete.
+ * Next.js merges metadata shallowly: a page that omits `alternates.canonical`
+ * can inherit the root layout's `/` canonical. Spreading this helper on every
+ * route page sets the correct self-referencing canonical and complete social
+ * previews (including images).
  */
 export function pageOpenGraph({
   title,
@@ -105,6 +111,9 @@ export function pageOpenGraph({
     : undefined;
 
   return {
+    alternates: {
+      canonical: canonicalPath(path),
+    },
     openGraph: {
       title,
       description,
