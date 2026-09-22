@@ -64,8 +64,9 @@ function extractTitle(html) {
 }
 
 function extractCanonical(html) {
-  const m = html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["'][^>]*>/i)
-    || html.match(/<link[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical["'][^>]*>/i);
+  const m =
+    html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["'][^>]*>/i) ||
+    html.match(/<link[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical["'][^>]*>/i);
   return m ? m[1] : null;
 }
 
@@ -89,6 +90,11 @@ function countH1(html) {
 
 function hasLang(html) {
   return /<html[^>]+lang=["'][^"']+["']/i.test(html);
+}
+
+function normalizePath(pathname) {
+  if (!pathname || pathname === '/') return '/';
+  return pathname.endsWith('/') ? pathname : `${pathname}/`;
 }
 
 async function auditRobots() {
@@ -160,7 +166,7 @@ async function auditSitemap() {
 }
 
 async function auditPage(path) {
-  const { res, text, url } = await fetchText(path);
+  const { res, text } = await fetchText(path);
   const id = path === '/' ? 'home' : path.replace(/\//g, '_').replace(/^_|_$/g, '');
 
   if (!res.ok) {
@@ -191,9 +197,27 @@ async function auditPage(path) {
   }
 
   const canonical = extractCanonical(text);
-  if (!canonical) fail(`page.${id}.canonical`, `${path} missing canonical link`);
-  else if (!/^https?:\/\//i.test(canonical)) fail(`page.${id}.canonical`, `${path} canonical is not absolute`, canonical);
-  else pass(`page.${id}.canonical`, `${path} has canonical`, canonical);
+  if (!canonical) {
+    fail(`page.${id}.canonical`, `${path} missing canonical link`);
+  } else if (!/^https?:\/\//i.test(canonical)) {
+    fail(`page.${id}.canonical`, `${path} canonical is not absolute`, canonical);
+  } else {
+    try {
+      const canPath = normalizePath(new URL(canonical).pathname);
+      const expected = normalizePath(path);
+      if (canPath !== expected) {
+        fail(
+          `page.${id}.canonical`,
+          `${path} canonical path mismatch (expected ${expected})`,
+          canonical
+        );
+      } else {
+        pass(`page.${id}.canonical`, `${path} has matching canonical`, canonical);
+      }
+    } catch {
+      fail(`page.${id}.canonical`, `${path} canonical is not a valid URL`, canonical);
+    }
+  }
 
   const ogTitle = extractMeta(text, 'og:title');
   const ogImage = extractMeta(text, 'og:image');
@@ -224,11 +248,8 @@ async function auditPage(path) {
     pass(`page.${id}.jsonld`, `${path} has ${jsonLd.length} JSON-LD block(s)`);
   }
 
-  // Soft check: viewport present
   if (!extractMeta(text, 'viewport')) warn(`page.${id}.viewport`, `${path} missing viewport meta`);
   else pass(`page.${id}.viewport`, `${path} has viewport meta`);
-
-  void url;
 }
 
 async function auditHeaders() {
@@ -252,9 +273,8 @@ async function auditSitemapCoverage(locs) {
     const match = locs.some((loc) => {
       try {
         const u = new URL(loc);
-        const p = u.pathname.endsWith('/') || u.pathname === '/' ? u.pathname : `${u.pathname}/`;
-        const target = path === '/' ? '/' : path;
-        return p === target || (target !== '/' && p === target.replace(/\/$/, ''));
+        const p = normalizePath(u.pathname);
+        return p === normalizePath(path);
       } catch {
         return false;
       }
