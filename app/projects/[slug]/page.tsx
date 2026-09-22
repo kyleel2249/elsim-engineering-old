@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { ArrowLeft } from 'lucide-react';
 import { getProjectBySlug, getPublishedProjects } from '@/lib/data/projects';
 import { getServiceBySlug } from '@/lib/data/services';
+import { getSeoTargetBySlug } from '@/lib/data/seo-master-map';
 import { Reveal } from '@/components/motion/Reveal';
 import { WorkGallery } from '@/components/media/WorkGallery';
 import { getWorkByCategory, media } from '@/lib/data/media';
@@ -21,18 +22,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const project = getProjectBySlug(params.slug);
   if (!project) return { title: 'Project not found' };
 
+  const seo = getSeoTargetBySlug('project', project.slug);
   const categoryPhotos = getWorkByCategory(project.category);
   const image = categoryPhotos[0] ?? media.work.transformerKioskInstallation;
+  const title =
+    seo?.metaTitle ?? `${project.title} — ${project.location} | ELSIM Engineering`;
+  const description = seo?.metaDescription ?? project.shortDescription;
+  const keywords = seo
+    ? [seo.primary, ...seo.secondary, ...seo.longTail]
+    : [project.title, project.location, 'ELSIM Engineering'];
 
   return {
-    title: project.title,
-    description: project.shortDescription,
-    alternates: { canonical: `/projects/${project.slug}` },
+    title,
+    description,
+    keywords,
     ...pageOpenGraph({
-      title: `${project.title} — ${project.location}`,
-      description: project.shortDescription,
-      path: `/projects/${project.slug}`,
-      image,
+      title,
+      description,
+      path: `/projects/${project.slug}/`,
+      image: {
+        ...image,
+        alt:
+          image.alt ||
+          seo?.imageAltKeywords[0] ||
+          `${project.title} in ${project.location}`,
+      },
       type: 'article',
     }),
   };
@@ -48,6 +62,8 @@ export default function ProjectDetailPage({ params }: Props) {
   const project = getProjectBySlug(params.slug);
   if (!project) notFound();
 
+  const seo = getSeoTargetBySlug('project', project.slug);
+
   const related = getPublishedProjects()
     .filter((p) => p.slug !== project.slug && p.category === project.category)
     .slice(0, 3);
@@ -59,8 +75,9 @@ export default function ProjectDetailPage({ params }: Props) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CreativeWork',
-    name: project.title,
-    description: project.description,
+    name: seo?.h1 ?? project.title,
+    description: seo?.metaDescription ?? project.description,
+    keywords: seo ? [seo.primary, ...seo.secondary] : undefined,
     locationCreated: { '@type': 'Place', name: project.location },
     creator: { '@type': 'Organization', name: 'ELSIM Engineering' },
   };
@@ -107,7 +124,7 @@ export default function ProjectDetailPage({ params }: Props) {
           className="mt-5 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl"
           style={{ color: 'var(--theme-text)' }}
         >
-          {project.title}
+          {seo?.h1 ?? project.title}
         </h1>
 
         <p className="mt-4 text-lg leading-relaxed" style={{ color: 'var(--theme-text-muted)' }}>
