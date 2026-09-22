@@ -96,36 +96,70 @@ export const viewport: Viewport = {
   colorScheme: 'light dark',
 };
 
-/** Organisation structured data — helps search engines resolve the business. */
+/**
+ * Organisation / engineering-business structured data.
+ * Helps search engines and AI crawlers (GPTBot, ClaudeBot, Google-Extended)
+ * map entity relationships for ELSIM Engineering.
+ * ProfessionalService is the Schema.org type Google recognises; EngineeringBusiness
+ * is included as an additional type for AI entity mapping.
+ */
 const organisationJsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'ProfessionalService',
-  name: company.name,
-  description: company.description,
+  '@type': ['ProfessionalService', 'LocalBusiness'],
+  additionalType: 'https://schema.org/EngineeringBusiness',
+  '@id': `${siteUrl}/#organization`,
+  name: 'ELSIM Engineering',
+  legalName: company.legalName,
+  alternateName: company.name,
+  description:
+    'Premium electrical, energy, and technical engineering services in Ghana and West Africa.',
   url: siteUrl,
-  logo: `${siteUrl}${media.logo.src}`,
+  logo: {
+    '@type': 'ImageObject',
+    url: `${siteUrl}${media.logo.src}`,
+  },
   image: `${siteUrl}${socialImage.src}`,
-  telephone: company.phones.map((p) => p.display),
+  email: company.email,
+  telephone: company.phones.map((p) => p.tel),
   slogan: company.tagline,
   address: {
     '@type': 'PostalAddress',
     streetAddress: company.address.line1,
     addressLocality: company.address.city,
+    addressRegion: 'Greater Accra',
+    addressCountry: 'GH',
+  },
+  geo: {
+    '@type': 'GeoCoordinates',
     addressCountry: 'GH',
   },
   areaServed: company.regions.map((name) => ({ '@type': 'Country', name })),
+  contactPoint: [
+    {
+      '@type': 'ContactPoint',
+      contactType: 'customer support',
+      email: company.email,
+      telephone: company.phones[0]?.tel,
+      areaServed: 'GH',
+      availableLanguage: ['English'],
+    },
+  ],
   sameAs: [
     company.socials.linkedin,
     company.socials.facebook,
     company.socials.tiktok,
   ],
   knowsAbout: [
+    'Electrical Engineering',
+    'Solar Power Grid Systems',
+    'Industrial Infrastructure',
     'Electrical installations',
     'Solar photovoltaic systems',
     'Power distribution and transformers',
     'Electrical inspection and maintenance',
     'Electrical consulting and audits',
   ],
+  priceRange: '$$',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
