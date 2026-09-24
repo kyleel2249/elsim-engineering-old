@@ -1,68 +1,48 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { ProjectExplorer } from '@/components/projects/ProjectExplorer';
-import { WorkGallery } from '@/components/media/WorkGallery';
-import { getPublishedProjects } from '@/lib/data/projects';
-import { media, workPhotos } from '@/lib/data/media';
-import { pageOpenGraph } from '@/lib/seo';
+import { ArrowUpRight } from 'lucide-react';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { Reveal } from '@/components/ui/Reveal';
+import { projects } from '@/lib/data/projects';
 
 export const metadata: Metadata = {
   title: 'Projects',
-  description:
-    "Electrical, solar, transformer and infrastructure projects delivered by ELSIM Engineering across Ghana, Togo, Côte d'Ivoire, Burkina Faso, Senegal and Niger.",
-  ...pageOpenGraph({
-    title: 'Projects — ELSIM Engineering',
-    description:
-      "Electrical, solar, transformer and infrastructure projects delivered across Ghana, Togo, Côte d'Ivoire, Burkina Faso, Senegal and Niger.",
-    path: '/projects',
-    image: media.work.transformerKioskInstallation,
-  }),
+  description: 'Case studies from ELSIM Engineering — provisional pending management approval.'
 };
 
 export default function ProjectsPage() {
-  const projects = getPublishedProjects();
-
   return (
-    <div className="py-16 sm:py-24" style={{ backgroundColor: 'var(--theme-bg)' }}>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <PageHeader
-          eyebrow="Portfolio"
-          title="Where our engineers have worked"
-          lede="Verified project experience across six countries in West Africa. Case-study detail and site photography are added as approved records become available."
-        />
+    <div className="mx-auto max-w-6xl px-6 py-20">
+      <Badge tone="copper">Sheet 02 — Projects</Badge>
+      <h1 className="mt-4 font-display text-4xl text-steel-100 sm:text-5xl">Recent work</h1>
+      <p className="mt-4 max-w-2xl text-base leading-relaxed text-steel-300">
+        These case studies are provisional placeholders in the right shape for real projects.
+        Photography and verified figures will replace them once ELSIM approves publication.
+      </p>
 
-        <ProjectExplorer projects={projects} />
-
-        <section className="mt-16">
-          <h2 className="font-display text-2xl font-bold" style={{ color: 'var(--theme-text)' }}>
-            From the field
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm" style={{ color: 'var(--theme-text-muted)' }}>
-            ELSIM crews at work across installations, transformer works, line works and
-            construction supervision.
-          </p>
-          <WorkGallery photos={workPhotos} className="mt-6" />
-        </section>
-
-        <div
-          className="mt-16 rounded border p-6 text-center sm:p-8"
-          style={{ borderColor: 'var(--theme-border)', backgroundColor: 'var(--theme-bg-muted)' }}
-        >
-          <h2 className="font-display text-xl font-semibold" style={{ color: 'var(--theme-text)' }}>
-            Planning something similar?
-          </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm" style={{ color: 'var(--theme-text-muted)' }}>
-            Send us the location, the load and your timeline. We will come back with an approach and
-            an indication of cost.
-          </p>
-          <Link
-            href="/quotation"
-            className="mt-6 inline-flex items-center rounded bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent transition-all hover:brightness-110"
-          >
-            Discuss a similar project
-          </Link>
-        </div>
+      <div className="mt-14 grid gap-4 lg:grid-cols-3">
+        {projects.map((project, i) => (
+          <Reveal key={project.slug} delay={i * 0.05}>
+            <Card className="flex h-full flex-col">
+              <div className="flex items-center justify-between">
+                <Badge tone="cyan">{project.sector}</Badge>
+                <span className="font-mono text-xs text-steel-400">{project.year}</span>
+              </div>
+              <h2 className="mt-4 font-display text-lg text-steel-100">{project.title}</h2>
+              <p className="mt-2 text-sm text-steel-400">{project.location}</p>
+              <p className="mt-3 flex-1 text-sm leading-relaxed text-steel-300">
+                {project.summary}
+              </p>
+              <Link
+                href={`/projects/${project.slug}`}
+                className="mt-5 inline-flex items-center gap-1 text-sm text-cyan-400 hover:text-cyan-300"
+              >
+                Read case study <ArrowUpRight className="h-4 w-4" aria-hidden />
+              </Link>
+            </Card>
+          </Reveal>
+        ))}
       </div>
     </div>
   );
