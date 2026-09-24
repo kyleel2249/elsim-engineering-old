@@ -1,62 +1,48 @@
 export interface Service {
   slug: string;
-  title: string;
+  name: string;
   shortDescription: string;
   description: string;
-  icon: string;
-  features: string[];
-  process: string[];
-  safetyNotes: string[];
-  relatedProjects: string[];
-  faq: { question: string; answer: string }[];
+  capabilities: string[];
+  spec: { label: string; value: string }[];
+  icon: ServiceIcon;
 }
+
+export type ServiceIcon =
+  | 'circuit'
+  | 'structure'
+  | 'gears'
+  | 'power'
+  | 'blueprint'
+  | 'maintenance';
 
 export interface Project {
   slug: string;
   title: string;
-  location: string;
-  category: string;
   sector: string;
-  status: 'completed' | 'ongoing' | 'pending-verification';
-  shortDescription: string;
-  description: string;
-  challenge?: string;
-  scope?: string[];
-  outcomes?: string[];
-  images: string[];
-  relatedServices: string[];
-  client?: string;
-  clientPermission: boolean;
-  completionDate?: string;
-  approvalStatus: 'draft' | 'review' | 'approved' | 'published';
+  location: string;
+  year: string;
+  summary: string;
+  detail: string;
+  scope: string[];
+  status: 'completed' | 'ongoing' | 'provisional';
 }
 
-export interface Industry {
-  slug: string;
-  title: string;
-  description: string;
-  commonProblems: string[];
-  relevantServices: string[];
-}
-
-export interface QuotationFormData {
-  name: string;
-  company: string;
+export interface QuotationPayload {
+  fullName: string;
+  company?: string;
   email: string;
-  telephone: string;
-  projectType: string;
-  serviceRequired: string;
+  phone: string;
+  serviceSlug: string;
   projectLocation: string;
-  projectDescription: string;
-  estimatedTimeline: string;
-  budgetRange?: string;
+  budgetRange: string;
+  timeline: string;
+  description: string;
   consent: boolean;
 }
 
-export interface LeadershipMember {
-  name: string;
-  role: string;
-  bio: string;
-  photo?: string;
-  approvalStatus: 'draft' | 'approved' | 'published';
+export interface QuotationRecord extends QuotationPayload {
+  id: string;
+  submittedAt: string;
+  reference: string;
 }
