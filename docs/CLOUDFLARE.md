@@ -30,7 +30,7 @@ Preview separately:
 
 | Key | Production | Preview |
 |---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | `https://elsimengineering.com` | the preview URL |
+| `NEXT_PUBLIC_SITE_URL` | `https://elsimengineeringlimited.com` | the preview URL |
 | `NEXT_PUBLIC_SITE_INDEXABLE` | `true` | `false` |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | `G-E8Z0XCC54Q` | *(leave empty)* |
 | `NODE_VERSION` | `20` | `20` |

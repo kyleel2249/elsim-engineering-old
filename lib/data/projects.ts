@@ -48,3 +48,13 @@ export const projects: Project[] = [
 export function getProjectBySlug(slug: string): Project | undefined {
   return projects.find((p) => p.slug === slug);
 }
+
+/**
+ * Projects that are real, approved case studies. Provisional entries are
+ * placeholders: their pages stay reachable, but they are kept out of the
+ * sitemap (and marked noindex on the page) until ELSIM confirms the project
+ * and changes `status` to 'completed' or 'ongoing'.
+ */
+export function getPublishedProjects(): Project[] {
+  return projects.filter((p) => p.status !== 'provisional');
+}

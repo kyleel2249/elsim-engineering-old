@@ -13,7 +13,10 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   if (!project) return {};
   return {
     title: project.title,
-    description: project.summary
+    description: project.summary,
+    // Placeholder case studies stay reachable but are not indexed (and are not in
+    // sitemap.xml) until ELSIM approves them and sets a real status.
+    ...(project.status === 'provisional' ? { robots: { index: false, follow: true } } : {})
   };
 }
 

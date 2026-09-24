@@ -1,5 +1,5 @@
 import { allMappedKeywords, getSeoTarget, type SeoTarget } from '@/lib/data/seo-master-map';
-import { siteUrl } from '@/lib/site';
+import { siteUrl, pageUrl, isStaticExport, CANONICAL_HOST } from '@/lib/site';
 
 interface OgImageInput {
   src: string;
@@ -29,23 +29,25 @@ export function serviceKeywords(serviceTitle: string, extra: string[] = []): str
     `${serviceTitle} West Africa`,
     'ELSIM Engineering',
     'electrical engineering Ghana',
-    'www.elsimengineering.com',
+    CANONICAL_HOST,
     ...extra,
   ];
 }
 
-/** Absolute page URL with trailing slash (matches static export routes). */
+/**
+ * Absolute page URL. Uses the trailing-slash form of the current build
+ * (static export: `/about/`, Node build: `/about`) — identical to sitemap.xml.
+ */
 export function absolutePageUrl(path: string): string {
-  if (!path || path === '/') return `${siteUrl}/`;
-  const normalized = path.startsWith('/') ? path : `/${path}`;
-  return `${siteUrl}${normalized.endsWith('/') ? normalized : `${normalized}/`}`;
+  return pageUrl(path);
 }
 
-/** Path-only canonical for Metadata.alternates (leading slash, trailing slash). */
+/** Path-only canonical for Metadata.alternates, in the same form as the sitemap. */
 export function canonicalPath(path: string): string {
   if (!path || path === '/') return '/';
   const normalized = path.startsWith('/') ? path : `/${path}`;
-  return normalized.endsWith('/') ? normalized : `${normalized}/`;
+  const trimmed = normalized.replace(/\/+$/, '');
+  return isStaticExport ? `${trimmed}/` : trimmed;
 }
 
 /**

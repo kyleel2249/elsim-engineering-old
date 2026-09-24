@@ -9,7 +9,7 @@ Automated checks for crawlability, metadata, structured data and security header
 npm run seo:audit
 
 # Against production (after DNS points at Pages)
-npm run seo:audit -- https://www.elsimengineering.com
+npm run seo:audit -- https://www.elsimengineeringlimited.com
 ```
 
 Exit code `1` means one or more checks failed.
@@ -25,7 +25,7 @@ Exit code `1` means one or more checks failed.
 
 ## Manual checklist (outside the script)
 
-1. **DNS** — `www.elsimengineering.com` and apex serve Cloudflare Pages (not Namecheap parking).
+1. **DNS** — `www.elsimengineeringlimited.com` and apex serve Cloudflare Pages (not Namecheap parking).
 2. **HTTPS** — Valid certificate for the custom domain; no mixed content.
 3. **Host preference** — Apex redirects to `www` (or the reverse), one canonical host only.
 4. **Search Console** — Property verified; `sitemap.xml` submitted; no “couldn’t fetch” errors.
@@ -36,7 +36,7 @@ Exit code `1` means one or more checks failed.
 ## Interpreting failures
 
 - **robots / sitemap fail on the custom domain only** — DNS or SSL is not pointing at Pages yet. Compare with `https://elsim-engineering.pages.dev`.
-- **canonical host mismatch** — Set `NEXT_PUBLIC_SITE_URL=https://www.elsimengineering.com` in Pages env and redeploy.
+- **canonical host mismatch** — Set `NEXT_PUBLIC_SITE_URL=https://www.elsimengineeringlimited.com` in Pages env and redeploy.
 - **missing og:image on a page** — That route’s metadata must spread `pageOpenGraph()` from `lib/seo.ts` so images are not dropped.
 
 ## CI (optional)
