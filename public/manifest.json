@@ -1,0 +1,9 @@
+{
+  "name": "ELSIM Engineering",
+  "short_name": "ELSIM",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070B14",
+  "theme_color": "#070B14",
+  "description": "Electrical, structural and mechanical engineering services in Ghana."
+}
