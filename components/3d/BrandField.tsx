@@ -6,7 +6,8 @@ import { useWebGLSupport, useReducedMotion } from '@/hooks/useWebGLSupport';
 import { detectQualityTier } from '@/lib/3d/quality';
 
 /**
- * Viewport-gated wrapper around the HeroEnergyField WebGL scene.
+ * Viewport-gated wrapper around the SceneCanvas WebGL scene
+ * (CircuitCore + EnergyParticles from HeroEnergyField.tsx).
  *
  * The scene itself was written for the hero but never mounted anywhere, leaving
  * three.js in the bundle doing nothing. It is reinstated here as a background
@@ -23,8 +24,8 @@ import { detectQualityTier } from '@/lib/3d/quality';
  * When any gate fails the component renders a static brand gradient instead, so
  * the section never looks broken — it just looks quieter.
  */
-const HeroEnergyField = dynamic(
-  () => import('@/components/3d/HeroEnergyField').then((m) => m.HeroEnergyField),
+const EnergyScene = dynamic(
+  () => import('@/components/3d/SceneCanvas').then((m) => m.SceneCanvas),
   { ssr: false, loading: () => <StaticField /> }
 );
 
@@ -72,7 +73,7 @@ export function BrandField({ className }: { className?: string }) {
 
   return (
     <div ref={containerRef} className={className} aria-hidden>
-      {shouldRender ? <HeroEnergyField /> : <StaticField />}
+      {shouldRender ? <EnergyScene interactive={false} /> : <StaticField />}
     </div>
   );
 }

@@ -51,11 +51,11 @@ export function CommandPalette() {
   const entries = useMemo<Entry[]>(() => {
     const serviceEntries: Entry[] = services.map((s) => ({
       id: `s-${s.slug}`,
-      title: s.title,
+      title: s.name,
       subtitle: s.shortDescription,
       group: 'Services',
       href: `/services/${s.slug}`,
-      keywords: [s.slug, ...s.features].join(' '),
+      keywords: [s.slug, ...s.capabilities].join(' '),
     }));
 
     const projectEntries: Entry[] = getPublishedProjects().map((p) => ({
@@ -64,7 +64,7 @@ export function CommandPalette() {
       subtitle: p.location,
       group: 'Projects',
       href: `/projects/${p.slug}`,
-      keywords: [p.slug, p.category, p.sector, p.client ?? ''].join(' '),
+      keywords: [p.slug, p.sector, p.location, p.year, p.client ?? ''].join(' '),
     }));
 
     const blogEntries: Entry[] = getPublishedPosts().map((post) => ({

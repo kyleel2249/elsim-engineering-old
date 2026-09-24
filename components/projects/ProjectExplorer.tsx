@@ -12,18 +12,18 @@ type FilterKey = 'all' | string;
 /**
  * Filterable project index.
  *
- * Filters by service category and by country, plus a free-text search across
- * title, location, client and description. Counts are shown on each chip so an
+ * Filters by sector and by country, plus a free-text search across
+ * title, location, client, scope and description. Counts are shown on each chip so an
  * empty result is predictable before it is selected.
  */
 export function ProjectExplorer({ projects }: { projects: Project[] }) {
-  const [category, setCategory] = useState<FilterKey>('all');
+  const [sector, setSector] = useState<FilterKey>('all');
   const [country, setCountry] = useState<FilterKey>('all');
   const [query, setQuery] = useState('');
 
-  const categories = useMemo(() => {
+  const sectors = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const p of projects) counts.set(p.category, (counts.get(p.category) ?? 0) + 1);
+    for (const p of projects) counts.set(p.sector, (counts.get(p.sector) ?? 0) + 1);
     return [...counts.entries()].sort((a, b) => b[1] - a[1]);
   }, [projects]);
 
@@ -41,21 +41,21 @@ export function ProjectExplorer({ projects }: { projects: Project[] }) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return projects.filter((p) => {
-      if (category !== 'all' && p.category !== category) return false;
+      if (sector !== 'all' && p.sector !== sector) return false;
       if (country !== 'all' && !p.location.toLowerCase().includes(country.toLowerCase()))
         return false;
       if (!q) return true;
-      return [p.title, p.location, p.shortDescription, p.client ?? '', p.sector]
+      return [p.title, p.location, p.summary, p.client ?? '', p.sector, ...p.scope]
         .join(' ')
         .toLowerCase()
         .includes(q);
     });
-  }, [projects, category, country, query]);
+  }, [projects, sector, country, query]);
 
-  const filtersActive = category !== 'all' || country !== 'all' || query.trim() !== '';
+  const filtersActive = sector !== 'all' || country !== 'all' || query.trim() !== '';
 
   function reset() {
-    setCategory('all');
+    setSector('all');
     setCountry('all');
     setQuery('');
   }
@@ -99,10 +99,10 @@ export function ProjectExplorer({ projects }: { projects: Project[] }) {
       {/* Filter chips */}
       <div className="mt-5 space-y-3">
         <ChipRow
-          legend="Service"
-          options={[['all', projects.length], ...categories]}
-          value={category}
-          onChange={setCategory}
+          legend="Sector"
+          options={[['all', projects.length], ...sectors]}
+          value={sector}
+          onChange={setSector}
           format={label}
         />
         <ChipRow
@@ -161,7 +161,7 @@ export function ProjectExplorer({ projects }: { projects: Project[] }) {
                   className="mt-2 flex-1 text-sm leading-relaxed"
                   style={{ color: 'var(--theme-text-muted)' }}
                 >
-                  {project.shortDescription}
+                  {project.summary}
                 </p>
 
                 {project.client && project.clientPermission && (

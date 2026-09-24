@@ -26,6 +26,10 @@ export interface Project {
   detail: string;
   scope: string[];
   status: 'completed' | 'ongoing' | 'provisional';
+  /** Optional client name. Only ever shown when `clientPermission` is true. */
+  client?: string;
+  /** Set true only once the client has agreed to be named publicly. */
+  clientPermission?: boolean;
 }
 
 export interface QuotationPayload {
