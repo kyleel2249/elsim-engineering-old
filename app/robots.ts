@@ -1,64 +1,18 @@
-import type { MetadataRoute } from 'next';
-import { siteUrl, isIndexable } from '@/lib/site';
+import { MetadataRoute } from 'next';
+import { SITE_URL } from '@/lib/site';
 
-/**
- * Major AI / LLM and search crawlers that should be allowed to index public pages.
- * Explicit Allow rules make intent clear even when a global * rule already permits access.
- */
-const AI_CRAWLERS = [
-  'GPTBot', // OpenAI
-  'ChatGPT-User',
-  'OAI-SearchBot',
-  'ClaudeBot', // Anthropic
-  'anthropic-ai',
-  'Google-Extended', // Gemini / Google AI training opt-in path
-  'Googlebot',
-  'Googlebot-Image',
-  'Bingbot',
-  'Applebot',
-  'Applebot-Extended',
-  'PerplexityBot',
-  'Bytespider', // ByteDance
-  'CCBot', // Common Crawl
-  'cohere-ai',
-  'FacebookBot',
-  'meta-externalagent',
-  'Amazonbot',
-  'Diffbot',
-] as const;
-
-const DISALLOW_PATHS = ['/api/', '/_next/'] as const;
-
-/**
- * Robots policy for search engines and AI crawlers.
- *
- * Production: allow organic + AI bots on public content; block API and framework
- * internals. Staging: set NEXT_PUBLIC_SITE_INDEXABLE=false to disallow all.
- */
+// The site previously disallowed all crawling on purpose while brand
+// assets/content were pending approval (see docs/STATUS.md history). That
+// flag is now off: the site is live and being submitted to Search
+// Console, so crawling is allowed. /api/ stays blocked since it's a form
+// endpoint, not content.
 export default function robots(): MetadataRoute.Robots {
-  if (!isIndexable) {
-    return {
-      rules: { userAgent: '*', disallow: '/' },
-      sitemap: `${siteUrl}/sitemap.xml`,
-    };
-  }
-
-  const aiRules: MetadataRoute.Robots['rules'] = AI_CRAWLERS.map((bot) => ({
-    userAgent: bot,
-    allow: '/',
-    disallow: [...DISALLOW_PATHS],
-  }));
-
   return {
-    rules: [
-      {
-        userAgent: '*',
-        allow: '/',
-        disallow: [...DISALLOW_PATHS],
-      },
-      ...aiRules,
-    ],
-    sitemap: `${siteUrl}/sitemap.xml`,
-    host: siteUrl,
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: ['/api/']
+    },
+    sitemap: `${SITE_URL}/sitemap.xml`
   };
 }

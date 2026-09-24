@@ -1,49 +1,21 @@
 /**
- * Single source of truth for environment-driven site configuration.
- * Imported by layout, robots, sitemap and the quotation API.
- */
-
-/**
- * Canonical origin used in sitemap.xml, robots.txt, Open Graph and JSON-LD.
+ * Canonical production URL, used by app/layout.tsx (metadataBase),
+ * app/sitemap.ts and app/robots.ts.
  *
- * IMPORTANT (Google Search Console):
- * Sitemap <loc> hosts must match the property where the sitemap is submitted.
- * - URL-prefix property https://elsimengineering.com  → use this apex host
- * - URL-prefix property https://www.elsimengineering.com → set
- *   NEXT_PUBLIC_SITE_URL=https://www.elsimengineering.com in Pages env
- * - Never submit a pages.dev sitemap that lists custom-domain URLs (or the reverse)
+ * IMPORTANT: NEXT_PUBLIC_* variables are inlined into the JavaScript
+ * bundle at BUILD time, not read at request time. If NEXT_PUBLIC_SITE_URL
+ * isn't set in your hosting platform's environment variables *before* the
+ * production build runs, every URL emitted into sitemap.xml and
+ * robots.txt gets baked in as whatever the fallback below is — which is
+ * exactly what caused the "32 errors / 0 indexed" Search Console report:
+ * the previous fallback was `http://localhost:3000`, so every submitted
+ * URL pointed at an address Google could never reach.
  *
- * No trailing slash.
+ * The fallback below is now the real production domain instead of
+ * localhost, so even a misconfigured env var can't reintroduce that bug —
+ * but you should still set NEXT_PUBLIC_SITE_URL explicitly in your host's
+ * dashboard and redeploy (a plain restart does not pick up new env vars
+ * for NEXT_PUBLIC_* values; it requires a fresh build).
  */
-export const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://elsimengineering.com'
-).replace(/\/$/, '');
-
-/**
- * Search-engine indexing.
- *
- * The site previously shipped with a hard `disallow: /` and `noindex` while it
- * was pre-launch. That is now a switch rather than a fact: set
- * NEXT_PUBLIC_SITE_INDEXABLE=false to put the block back during staging.
- */
-export const isIndexable = process.env.NEXT_PUBLIC_SITE_INDEXABLE !== 'false';
-
-/** Google Analytics measurement ID. Empty string disables analytics entirely. */
-export const GA_MEASUREMENT_ID =
-  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? 'G-E8Z0XCC54Q';
-
-/**
- * True when the build targets a fully static export (Cloudflare Pages).
- * Route handlers do not exist in that output, so client code uses this to
- * choose a non-API submission path.
- */
-export const isStaticExport = process.env.NEXT_PUBLIC_STATIC_EXPORT === '1';
-
-/**
- * Where quotation submissions are emailed.
- * Override with QUOTATION_INBOX in the host environment if needed.
- * Mail to support@elsimengineering.com should be forwarded at the domain
- * provider to elsimengineering@gmail.com.
- */
-export const quotationInbox =
-  process.env.QUOTATION_INBOX ?? 'support@elsimengineering.com';
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || 'https://elsimengineeringlimited.com';
