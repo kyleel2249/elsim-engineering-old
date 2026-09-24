@@ -2,7 +2,6 @@
 /node_modules
 /.pnp
 .pnp.js
-.yarn/install-state.gz
 
 # testing
 /coverage
@@ -31,8 +30,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# vercel
-.vercel
-
-# static-export scratch (scripts/prepare-static-export.mjs)
-/.api-stash/
+# local quotation store
+.data/
