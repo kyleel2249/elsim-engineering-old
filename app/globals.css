@@ -35,3 +35,16 @@
   border: 1px solid theme('colors.steel.600');
   background: theme('colors.steel.900');
 }
+
+/* Offline font fallback (see lib/fonts.offline.ts): these classes are applied to
+   <html> only when OFFLINE_FONTS=1, and define the same variables Tailwind's
+   font-display / font-body / font-mono families read. */
+.font-display-offline {
+  --font-display: ui-sans-serif, system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+}
+.font-body-offline {
+  --font-body: ui-sans-serif, system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+}
+.font-mono-offline {
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
