@@ -1,550 +1,252 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Copy, Loader2 } from 'lucide-react';
+import { CheckCircle2, Loader2 } from 'lucide-react';
+import {
+  QuotationFormValues,
+  STEP_FIELDS,
+  budgetRanges,
+  quotationSchema,
+  timelines
+} from '@/lib/validations';
 import { services } from '@/lib/data/services';
-import { quotationSchema } from '@/lib/validation/quotation';
-import type { QuotationResponse } from '@/lib/validation/quotation';
-import { company } from '@/lib/data/company';
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
-interface FormState {
-  name: string;
-  company: string;
-  email: string;
-  telephone: string;
-  projectType: string;
-  serviceRequired: string;
-  projectLocation: string;
-  projectDescription: string;
-  estimatedTimeline: string;
-  budgetRange: string;
-  consent: boolean;
-  website: string;
+const STEP_LABELS = ['Your details', 'Project scope', 'Describe & submit'];
+
+const inputClasses =
+  'w-full rounded-sm border border-steel-600 bg-steel-900 px-4 py-2.5 text-sm text-steel-100 placeholder:text-steel-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400';
+
+function Field({
+  label,
+  error,
+  children
+}: {
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-sm text-steel-300">{label}</span>
+      {children}
+      {error && <span className="mt-1 block text-xs text-copper-400">{error}</span>}
+    </label>
+  );
 }
 
-const initialState: FormState = {
-  name: '',
-  company: '',
-  email: '',
-  telephone: '',
-  projectType: '',
-  serviceRequired: '',
-  projectLocation: '',
-  projectDescription: '',
-  estimatedTimeline: '',
-  budgetRange: '',
-  consent: false,
-  website: '',
-};
-
-const STEPS = [
-  { id: 1, label: 'Your details' },
-  { id: 2, label: 'Project details' },
-  { id: 3, label: 'Timeline & consent' },
-] as const;
-
-const STEP_FIELDS: Record<number, (keyof FormState)[]> = {
-  1: ['name', 'email', 'telephone'],
-  2: ['serviceRequired', 'projectLocation', 'projectDescription'],
-  3: ['consent'],
-};
-
-const inputClass =
-  'w-full rounded border px-3 py-2.5 text-sm outline-none transition-[border-color,box-shadow] focus:ring-2';
-
-function fieldStyle(invalid: boolean) {
-  return {
-    borderColor: invalid ? '#B23034' : 'var(--theme-border)',
-    backgroundColor: 'var(--theme-surface)',
-    color: 'var(--theme-text)',
-    boxShadow: invalid ? '0 0 0 1px rgba(178,48,52,0.25)' : undefined,
-  } as const;
-}
-
-export function QuotationForm() {
-  const [form, setForm] = useState<FormState>(initialState);
-  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
-  const [step, setStep] = useState(1);
+export function QuotationForm({ defaultServiceSlug }: { defaultServiceSlug?: string }) {
+  const [step, setStep] = useState(0);
+  const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'error'>('idle');
   const [reference, setReference] = useState<string | null>(null);
-  const [serverMessage, setServerMessage] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
-  /** Rough completion signal so people can see progress within a step. */
-  const completion = useMemo(() => {
-    const required = [
-      form.name,
-      form.email,
-      form.telephone,
-      form.serviceRequired,
-      form.projectLocation,
-      form.projectDescription,
-      form.consent ? 'yes' : '',
-    ];
-    const filled = required.filter(Boolean).length;
-    return Math.round((filled / required.length) * 100);
-  }, [form]);
-
-  function update<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
-  }
-
-  function validateStep(target: number) {
-    const payload = { ...form, website: form.website || undefined };
-    const result = quotationSchema.safeParse(payload);
-    if (result.success) {
-      setErrors({});
-      return true;
+  const {
+    register,
+    handleSubmit,
+    trigger,
+    formState: { errors }
+  } = useForm<QuotationFormValues>({
+    resolver: zodResolver(quotationSchema),
+    mode: 'onBlur',
+    defaultValues: {
+      serviceSlug: defaultServiceSlug ?? '',
+      budgetRange: undefined,
+      timeline: undefined
     }
+  });
 
-    const fields = STEP_FIELDS[target] ?? [];
-    const next: Partial<Record<keyof FormState, string>> = {};
-
-    for (const issue of result.error.issues) {
-      const field = issue.path[0] as keyof FormState;
-      if (fields.includes(field) && !next[field]) next[field] = issue.message;
-    }
-
-    setErrors(next);
-
-    if (Object.keys(next).length) {
-      const firstField = fields.find((f) => next[f]);
-      if (firstField) document.getElementById(firstField)?.focus();
-      return false;
-    }
-    return true;
+  async function goNext() {
+    const fields = STEP_FIELDS[step];
+    const valid = await trigger(fields);
+    if (valid) setStep((s) => Math.min(s + 1, STEP_LABELS.length - 1));
   }
 
-  /** Build the enquiry body shared by WhatsApp (and email fallback). */
-  function enquiryMessage() {
-    return [
-      'ELSIM Engineering — project enquiry',
-      '',
-      `Name: ${form.name}`,
-      `Company: ${form.company || '—'}`,
-      `Email: ${form.email}`,
-      `Telephone: ${form.telephone}`,
-      `Service required: ${form.serviceRequired}`,
-      `Project type: ${form.projectType || '—'}`,
-      `Project location: ${form.projectLocation}`,
-      `Estimated timeline: ${form.estimatedTimeline || '—'}`,
-      `Budget range: ${form.budgetRange || '—'}`,
-      '',
-      'Project description:',
-      form.projectDescription,
-    ].join('\n');
+  function goBack() {
+    setStep((s) => Math.max(s - 1, 0));
   }
 
-  /** Primary handoff: open WhatsApp to the ELSIM business number with the form prefilled. */
-  function whatsappHref() {
-    const phone = company.phones.find((p) => p.whatsapp)?.tel.replace('+', '') ?? '233538578943';
-    return `https://wa.me/${phone}?text=${encodeURIComponent(enquiryMessage())}`;
-  }
-
-  function mailtoHref() {
-    return `mailto:?subject=${encodeURIComponent(
-      'ELSIM Engineering — project enquiry'
-    )}&body=${encodeURIComponent(enquiryMessage())}`;
-  }
-
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    if (!validateStep(3)) return;
-
-    setStatus('submitting');
-    setServerMessage(null);
-
-    // Primary path: send the enquiry to WhatsApp (+233 538 578 943).
-    // This works on static hosting and on mobile/desktop WhatsApp apps.
+  async function onSubmit(values: QuotationFormValues) {
+    setSubmitState('submitting');
     try {
-      const href = whatsappHref();
-      window.open(href, '_blank', 'noopener,noreferrer');
-      setStatus('success');
-      setReference(null);
-      setForm(initialState);
-      setStep(1);
+      const response = await fetch('/api/quotation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values)
+      });
+
+      if (!response.ok) throw new Error('Request failed');
+      const data = (await response.json()) as { reference: string };
+      setReference(data.reference);
+      setSubmitState('idle');
     } catch {
-      setStatus('error');
-      setServerMessage(
-        'We could not open WhatsApp automatically. Use the link below to send your enquiry, or call ' +
-          (company.phones.find((p) => p.whatsapp)?.display ?? '+233 538 578 943') +
-          '.'
-      );
+      setSubmitState('error');
     }
   }
 
-  async function copyReference() {
-    if (!reference) return;
-    try {
-      await navigator.clipboard.writeText(reference);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard unavailable — the reference is still on screen */
-    }
-  }
-
-  if (status === 'success') {
+  if (reference) {
     return (
-      <div
-        className="rounded border p-8 text-center"
-        style={{ borderColor: 'var(--theme-accent)', backgroundColor: 'var(--theme-accent-soft)' }}
-        role="status"
-      >
-        <CheckCircle2 className="mx-auto h-10 w-10 text-accent" aria-hidden />
-        <h3 className="mt-4 font-display text-xl font-semibold" style={{ color: 'var(--theme-text)' }}>
-          Opening WhatsApp
-        </h3>
-        <p className="mt-2 text-sm" style={{ color: 'var(--theme-text-muted)' }}>
-          Your project details have been prepared for WhatsApp. Complete the send in the chat that
-          opened — the ELSIM team will reply on +233 538 578 943.
+      <div className="border border-steel-700 bg-steel-800/60 p-10 text-center">
+        <CheckCircle2 className="mx-auto h-10 w-10 text-cyan-400" aria-hidden />
+        <h2 className="mt-4 font-display text-2xl text-steel-100">Quotation request received.</h2>
+        <p className="mt-3 text-sm text-steel-300">Your reference number is</p>
+        <p className="mt-1 font-mono text-lg text-cyan-400">{reference}</p>
+        <p className="mt-4 text-sm text-steel-400">
+          Quote this reference in any follow-up. Our team will get back to you with next steps.
         </p>
-        <a
-          href="https://wa.me/233538578943"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 inline-block text-sm font-semibold text-accent underline"
-        >
-          Open WhatsApp again if the chat did not appear
-        </a>
-        {reference && (
-          <div className="mt-6 flex flex-col items-center gap-2">
-            <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--theme-text-subtle)' }}>
-              Reference
-            </p>
-            <button
-              type="button"
-              onClick={copyReference}
-              className="inline-flex items-center gap-2 rounded border px-3 py-1.5 font-mono text-sm"
-              style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text)' }}
-            >
-              {reference}
-              <Copy className="h-3.5 w-3.5" aria-hidden />
-              <span className="sr-only">{copied ? 'Copied' : 'Copy reference'}</span>
-            </button>
-          </div>
-        )}
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-      <div className="flex items-center justify-between gap-4">
-        <ol className="flex flex-wrap gap-2" aria-label="Form steps">
-          {STEPS.map((s) => (
-            <li key={s.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  if (s.id < step || validateStep(step)) setStep(s.id);
-                }}
-                className={cn(
-                  'rounded-full px-3 py-1 text-xs font-semibold transition-colors',
-                  s.id === step ? 'bg-accent text-on-accent' : 'border'
-                )}
-                style={
-                  s.id === step
-                    ? undefined
-                    : { borderColor: 'var(--theme-border)', color: 'var(--theme-text-muted)' }
-                }
-                aria-current={s.id === step ? 'step' : undefined}
-              >
-                {s.id}. {s.label}
-              </button>
-            </li>
-          ))}
-        </ol>
-        <p className="text-xs tabular-nums" style={{ color: 'var(--theme-text-subtle)' }} aria-live="polite">
-          {completion}% complete
-        </p>
-      </div>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <ol className="mb-10 flex items-center gap-3" aria-label="Form progress">
+        {STEP_LABELS.map((label, i) => (
+          <li key={label} className="flex flex-1 items-center gap-3">
+            <div
+              className={cn(
+                'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border font-mono text-xs',
+                i <= step
+                  ? 'border-cyan-400 text-cyan-400'
+                  : 'border-steel-600 text-steel-500'
+              )}
+              aria-current={i === step ? 'step' : undefined}
+            >
+              {i + 1}
+            </div>
+            <span
+              className={cn(
+                'hidden text-sm sm:inline',
+                i === step ? 'text-steel-100' : 'text-steel-500'
+              )}
+            >
+              {label}
+            </span>
+            {i < STEP_LABELS.length - 1 && (
+              <div className="h-px flex-1 bg-steel-700" aria-hidden />
+            )}
+          </li>
+        ))}
+      </ol>
 
       <AnimatePresence mode="wait">
         <motion.div
           key={step}
-          initial={{ opacity: 0, x: 12 }}
+          initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -12 }}
-          transition={{ duration: 0.2 }}
-          className="space-y-4"
+          exit={{ opacity: 0, x: -16 }}
+          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
         >
-          {step === 1 && (
-            <>
-              <Field id="name" label="Full name" required error={errors.name}>
-                <input
-                  id="name"
-                  name="name"
-                  autoComplete="name"
-                  value={form.name}
-                  onChange={(e) => update('name', e.target.value)}
-                  className={inputClass}
-                  style={fieldStyle(Boolean(errors.name))}
-                />
+          {step === 0 && (
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Full name" error={errors.fullName?.message}>
+                <input className={inputClasses} {...register('fullName')} />
               </Field>
-              <Field id="company" label="Company / organisation" error={errors.company}>
-                <input
-                  id="company"
-                  name="company"
-                  autoComplete="organization"
-                  value={form.company}
-                  onChange={(e) => update('company', e.target.value)}
-                  className={inputClass}
-                  style={fieldStyle(Boolean(errors.company))}
-                />
+              <Field label="Company (optional)" error={errors.company?.message}>
+                <input className={inputClasses} {...register('company')} />
               </Field>
-              <Field id="email" label="Email" required error={errors.email}>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  value={form.email}
-                  onChange={(e) => update('email', e.target.value)}
-                  className={inputClass}
-                  style={fieldStyle(Boolean(errors.email))}
-                />
+              <Field label="Email" error={errors.email?.message}>
+                <input type="email" className={inputClasses} {...register('email')} />
               </Field>
-              <Field id="telephone" label="Telephone" required error={errors.telephone}>
-                <input
-                  id="telephone"
-                  name="telephone"
-                  type="tel"
-                  autoComplete="tel"
-                  value={form.telephone}
-                  onChange={(e) => update('telephone', e.target.value)}
-                  className={inputClass}
-                  style={fieldStyle(Boolean(errors.telephone))}
-                />
+              <Field label="Phone" error={errors.phone?.message}>
+                <input type="tel" className={inputClasses} {...register('phone')} />
               </Field>
-            </>
+            </div>
           )}
 
-          {step === 2 && (
-            <>
-              <Field id="serviceRequired" label="Service required" required error={errors.serviceRequired}>
-                <select
-                  id="serviceRequired"
-                  name="serviceRequired"
-                  value={form.serviceRequired}
-                  onChange={(e) => update('serviceRequired', e.target.value)}
-                  className={inputClass}
-                  style={fieldStyle(Boolean(errors.serviceRequired))}
-                >
-                  <option value="">Select a service</option>
-                  {services.map((s) => (
-                    <option key={s.slug} value={s.title}>
-                      {s.title}
+          {step === 1 && (
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Service needed" error={errors.serviceSlug?.message}>
+                <select className={inputClasses} {...register('serviceSlug')}>
+                  <option value="">Choose a service</option>
+                  {services.map((service) => (
+                    <option key={service.slug} value={service.slug}>
+                      {service.name}
                     </option>
                   ))}
                 </select>
               </Field>
-              <Field id="projectType" label="Project type" error={errors.projectType}>
+              <Field label="Project location" error={errors.projectLocation?.message}>
                 <input
-                  id="projectType"
-                  name="projectType"
-                  value={form.projectType}
-                  onChange={(e) => update('projectType', e.target.value)}
-                  className={inputClass}
-                  style={fieldStyle(Boolean(errors.projectType))}
-                  placeholder="e.g. new build, retrofit, maintenance"
+                  className={inputClasses}
+                  placeholder="e.g. Tema, Greater Accra"
+                  {...register('projectLocation')}
                 />
               </Field>
-              <Field id="projectLocation" label="Project location" required error={errors.projectLocation}>
-                <input
-                  id="projectLocation"
-                  name="projectLocation"
-                  value={form.projectLocation}
-                  onChange={(e) => update('projectLocation', e.target.value)}
-                  className={inputClass}
-                  style={fieldStyle(Boolean(errors.projectLocation))}
-                  placeholder="City / site address"
-                />
+              <Field label="Budget range" error={errors.budgetRange?.message}>
+                <select className={inputClasses} {...register('budgetRange')}>
+                  <option value="">Choose a range</option>
+                  {budgetRanges.map((range) => (
+                    <option key={range} value={range}>
+                      {range}
+                    </option>
+                  ))}
+                </select>
               </Field>
-              <Field
-                id="projectDescription"
-                label="Project description"
-                required
-                error={errors.projectDescription}
-                hint="Scope, load, any drawings or constraints"
-              >
-                <textarea
-                  id="projectDescription"
-                  name="projectDescription"
-                  rows={5}
-                  value={form.projectDescription}
-                  onChange={(e) => update('projectDescription', e.target.value)}
-                  className={inputClass}
-                  style={fieldStyle(Boolean(errors.projectDescription))}
-                />
+              <Field label="Timeline" error={errors.timeline?.message}>
+                <select className={inputClasses} {...register('timeline')}>
+                  <option value="">Choose a timeline</option>
+                  {timelines.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
               </Field>
-            </>
+            </div>
           )}
 
-          {step === 3 && (
-            <>
-              <Field id="estimatedTimeline" label="Estimated timeline" error={errors.estimatedTimeline}>
-                <input
-                  id="estimatedTimeline"
-                  name="estimatedTimeline"
-                  value={form.estimatedTimeline}
-                  onChange={(e) => update('estimatedTimeline', e.target.value)}
-                  className={inputClass}
-                  style={fieldStyle(Boolean(errors.estimatedTimeline))}
-                  placeholder="e.g. 8–12 weeks"
+          {step === 2 && (
+            <div className="grid gap-5">
+              <Field label="Project description" error={errors.description?.message}>
+                <textarea
+                  rows={6}
+                  className={inputClasses}
+                  placeholder="Scope, site conditions, any drawings you already have..."
+                  {...register('description')}
                 />
               </Field>
-              <Field id="budgetRange" label="Budget range" error={errors.budgetRange}>
+              <label className="flex items-start gap-3 text-sm text-steel-300">
                 <input
-                  id="budgetRange"
-                  name="budgetRange"
-                  value={form.budgetRange}
-                  onChange={(e) => update('budgetRange', e.target.value)}
-                  className={inputClass}
-                  style={fieldStyle(Boolean(errors.budgetRange))}
-                  placeholder="Optional"
-                />
-              </Field>
-              <div className="flex items-start gap-3">
-                <input
-                  id="consent"
-                  name="consent"
                   type="checkbox"
-                  checked={form.consent}
-                  onChange={(e) => update('consent', e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border"
-                  style={{ borderColor: errors.consent ? '#B23034' : 'var(--theme-border)' }}
+                  className="mt-1 h-4 w-4 rounded-sm border-steel-600 bg-steel-900 accent-cyan-400"
+                  {...register('consent')}
                 />
-                <label htmlFor="consent" className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>
-                  I agree that ELSIM Engineering may contact me about this enquiry using the details
-                  provided.
-                  {errors.consent && (
-                    <span className="mt-1 block text-xs" style={{ color: '#B23034' }}>
-                      {errors.consent}
-                    </span>
-                  )}
-                </label>
-              </div>
-              {/* Honeypot — leave empty */}
-              <div className="hidden" aria-hidden>
-                <label htmlFor="website">Website</label>
-                <input
-                  id="website"
-                  name="website"
-                  tabIndex={-1}
-                  autoComplete="off"
-                  value={form.website}
-                  onChange={(e) => update('website', e.target.value)}
-                />
-              </div>
-            </>
+                I agree to be contacted by ELSIM Engineering about this request.
+              </label>
+              {errors.consent && (
+                <span className="text-xs text-copper-400">{errors.consent.message}</span>
+              )}
+              {submitState === 'error' && (
+                <p className="text-sm text-copper-400">
+                  Something went wrong sending your request. Please try again.
+                </p>
+              )}
+            </div>
           )}
         </motion.div>
       </AnimatePresence>
 
-      <div className="flex items-center justify-between gap-3 border-t pt-4" style={{ borderColor: 'var(--theme-border)' }}>
-        {step > 1 ? (
-          <button
-            type="button"
-            onClick={() => setStep((s) => s - 1)}
-            className="inline-flex items-center gap-2 rounded border px-4 py-2.5 text-sm font-medium transition-colors"
-            style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text)' }}
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            Back
-          </button>
-        ) : (
-          <span />
-        )}
-
-        {step < 3 ? (
-          <button
-            type="button"
-            onClick={() => validateStep(step) && setStep((s) => s + 1)}
-            className="inline-flex items-center gap-2 rounded bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent transition-all hover:brightness-110"
-          >
+      <div className="mt-10 flex justify-between border-t border-steel-700 pt-6">
+        <Button type="button" variant="outline" onClick={goBack} disabled={step === 0}>
+          Back
+        </Button>
+        {step < STEP_LABELS.length - 1 ? (
+          <Button type="button" onClick={goNext}>
             Continue
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </button>
+          </Button>
         ) : (
-          <button
-            type="submit"
-            disabled={status === 'submitting'}
-            className="inline-flex items-center gap-2 rounded bg-accent px-5 py-2.5 text-sm font-semibold text-on-accent transition-all hover:brightness-110 disabled:opacity-60"
-          >
-            {status === 'submitting' && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
-            {status === 'submitting' ? 'Opening WhatsApp' : 'Send via WhatsApp'}
-          </button>
+          <Button type="submit" disabled={submitState === 'submitting'}>
+            {submitState === 'submitting' && (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            )}
+            Submit request
+          </Button>
         )}
       </div>
-
-      {status === 'error' && serverMessage && (
-        <div
-          className="flex gap-3 rounded border p-4 text-sm"
-          style={{ borderColor: '#B23034', backgroundColor: 'var(--theme-accent-soft)' }}
-          role="alert"
-        >
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: '#B23034' }} aria-hidden />
-          <div style={{ color: 'var(--theme-text)' }}>
-            <p>{serverMessage}</p>
-            <a
-              href={whatsappHref()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-block font-medium text-accent underline"
-            >
-              Send this enquiry on WhatsApp
-            </a>
-            <span className="mx-2 text-xs" style={{ color: 'var(--theme-text-subtle)' }}>
-              or
-            </span>
-            <a href={mailtoHref()} className="inline-block font-medium text-accent underline">
-              open in email
-            </a>
-          </div>
-        </div>
-      )}
     </form>
-  );
-}
-
-function Field({
-  id,
-  label,
-  required,
-  error,
-  hint,
-  children,
-}: {
-  id: string;
-  label: string;
-  required?: boolean;
-  error?: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <div className="mb-1 flex items-baseline justify-between gap-3">
-        <label htmlFor={id} className="text-sm font-medium" style={{ color: 'var(--theme-text)' }}>
-          {label}
-          {required && <span className="text-accent"> *</span>}
-        </label>
-        {hint && (
-          <span className="text-xs" style={{ color: 'var(--theme-text-subtle)' }}>
-            {hint}
-          </span>
-        )}
-      </div>
-      {children}
-      {error && (
-        <p className="mt-1 text-xs" style={{ color: '#B23034' }} role="alert">
-          {error}
-        </p>
-      )}
-    </div>
   );
 }
