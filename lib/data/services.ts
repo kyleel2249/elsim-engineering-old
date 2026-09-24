@@ -1,156 +1,137 @@
 import { Service } from '@/types';
 
-/**
- * PROVISIONAL SERVICE DATA
- * Source: Limited public summary from Scribd AI description only.
- * All content marked for management approval.
- * Do not treat as final ELSIM service definitions.
- */
+// PROVISIONAL: descriptions and specs are drafted from the general scope
+// implied by the company name and sector, pending ELSIM's verified service
+// list. Replace copy once management confirms exact offerings.
 export const services: Service[] = [
   {
-    slug: 'electrical-installations',
-    title: 'Electrical Installations',
-    shortDescription: 'Professional electrical system design and installation for commercial, industrial and residential facilities.',
-    description: '[REQUIRES ELSIM APPROVAL] Comprehensive electrical installation services covering design, supply, installation and commissioning of electrical systems. Scope to be confirmed against official company profile.',
-    icon: 'cable',
-    features: [
-      'System design and load calculations',
-      'Cable installation and containment',
-      'Switchgear and distribution boards',
-      'Lighting and power systems',
-      'Testing and commissioning',
+    slug: 'electrical-installation',
+    name: 'Electrical Installation & Wiring',
+    shortDescription:
+      'Design, supply and installation of low- and medium-voltage electrical systems for commercial and industrial sites.',
+    description:
+      'End-to-end electrical works covering distribution boards, cable containment, lighting circuits and power reticulation. Every installation is built to Ghana Grid Company and IEC standards, with as-built documentation handed over on completion.',
+    capabilities: [
+      'LV/MV distribution design and installation',
+      'Cable sizing, containment and termination',
+      'Lighting and small power circuits',
+      'Earthing and lightning protection',
+      'As-built drawings and test certificates'
     ],
-    process: [
-      'Site assessment and survey',
-      'Detailed design and drawings',
-      'Material procurement',
-      'Installation and quality control',
-      'Testing, commissioning and handover',
+    spec: [
+      { label: 'Standards', value: 'IEC 60364, GS 1465' },
+      { label: 'Voltage range', value: '230V – 33kV' },
+      { label: 'Typical lead time', value: '2–10 weeks' }
     ],
-    safetyNotes: [
-      'Strict adherence to electrical safety standards',
-      'Qualified and certified personnel only',
-      'Risk assessment prior to works',
-    ],
-    relatedProjects: [],
-    faq: [
-      {
-        question: 'What standards do you follow?',
-        answer: '[REQUIRES VERIFICATION] ELSIM follows applicable Ghanaian and international electrical standards. Exact certifications pending official confirmation.',
-      },
-    ],
+    icon: 'circuit'
   },
   {
-    slug: 'solar-power-solutions',
-    title: 'Solar Power Solutions',
-    shortDescription: 'Design, supply and installation of solar photovoltaic systems for reliable renewable energy.',
-    description: '[REQUIRES ELSIM APPROVAL] Solar PV system design, installation and maintenance. Scope based on public summary only; full capabilities pending verification from official profile.',
-    icon: 'sun',
-    features: [
-      'Site solar assessment',
-      'System sizing and design',
-      'Panel and inverter installation',
-      'Battery storage options',
-      'Monitoring and maintenance',
+    slug: 'structural-engineering',
+    name: 'Structural Engineering',
+    shortDescription:
+      'Structural analysis, design and site supervision for steel and reinforced-concrete works.',
+    description:
+      'Structural design services for warehouses, mezzanines, equipment platforms and steel frames, from concept sketches through to stamped construction drawings and site supervision during erection.',
+    capabilities: [
+      'Structural analysis and member sizing',
+      'Steel frame and portal design',
+      'Reinforced concrete detailing',
+      'Foundation design for equipment loads',
+      'Site supervision during construction'
     ],
-    process: [
-      'Energy audit and site survey',
-      'System design and quotation',
-      'Installation and grid connection (where applicable)',
-      'Commissioning and training',
-      'Ongoing support',
+    spec: [
+      { label: 'Standards', value: 'BS EN 1993, BS 8110' },
+      { label: 'Deliverables', value: 'Calculations + stamped drawings' },
+      { label: 'Typical lead time', value: '3–12 weeks' }
     ],
-    safetyNotes: [
-      'Working at height procedures',
-      'Electrical isolation protocols',
-      'Proper earthing and surge protection',
-    ],
-    relatedProjects: [],
-    faq: [],
+    icon: 'structure'
   },
   {
-    slug: 'electrical-maintenance',
-    title: 'Electrical Inspection & Maintenance',
-    shortDescription: 'Preventive maintenance, inspections and fault diagnosis to keep systems reliable.',
-    description: '[REQUIRES ELSIM APPROVAL] Scheduled and reactive electrical maintenance services. Full service package details pending official confirmation.',
-    icon: 'tool',
-    features: [
-      'Preventive maintenance schedules',
-      'Infrared thermography (where available)',
-      'Fault finding and repairs',
-      'Condition reporting',
-      'Emergency response (scope to be confirmed)',
+    slug: 'mechanical-fabrication',
+    name: 'Mechanical Fabrication',
+    shortDescription:
+      'Custom metal fabrication, piping and equipment installation for process and utility plant.',
+    description:
+      'Workshop and on-site fabrication of structural steel, tanks, ductwork and pipe racks, paired with mechanical installation of pumps, blowers and process equipment.',
+    capabilities: [
+      'Structural and plate fabrication',
+      'Pipe spooling and installation',
+      'Equipment alignment and installation',
+      'Pressure testing and commissioning support',
+      'Preventive maintenance programmes'
     ],
-    process: [
-      'Initial condition assessment',
-      'Maintenance plan development',
-      'Scheduled visits and reporting',
-      'Corrective actions',
-      'Documentation and recommendations',
+    spec: [
+      { label: 'Materials', value: 'Mild steel, stainless, HDPE' },
+      { label: 'Welding', value: 'AWS D1.1 qualified procedures' },
+      { label: 'Typical lead time', value: '2–8 weeks' }
     ],
-    safetyNotes: [
-      'Lock-out / tag-out procedures',
-      'Personal protective equipment',
-      'Competent persons only',
-    ],
-    relatedProjects: [],
-    faq: [],
+    icon: 'gears'
   },
   {
-    slug: 'power-distribution',
-    title: 'Power Distribution & Transformer Projects',
-    shortDescription: 'Power distribution networks, transformers and related infrastructure works.',
-    description: '[REQUIRES ELSIM APPROVAL] Power distribution and transformer-related engineering. Exact scope and capacity limits pending verification.',
-    icon: 'transformer',
-    features: [
-      'Distribution design',
-      'Transformer installation and testing',
-      'Substation works (scope pending)',
-      'Load studies',
+    slug: 'power-systems',
+    name: 'Power Systems & Backup',
+    shortDescription:
+      'Generator installation, automatic transfer switching and solar-hybrid backup power design.',
+    description:
+      'Resilient power solutions for sites facing grid instability — from generator sizing and installation to hybrid solar-battery systems with automatic transfer control.',
+    capabilities: [
+      'Generator sizing, supply and installation',
+      'Automatic transfer switch (ATS) wiring',
+      'Solar-hybrid backup design',
+      'Load studies and power factor correction',
+      'Remote monitoring setup'
     ],
-    process: [
-      'Engineering study',
-      'Detailed design',
-      'Procurement and logistics',
-      'Installation and testing',
-      'Commissioning',
+    spec: [
+      { label: 'Generator range', value: '10kVA – 1000kVA' },
+      { label: 'Solar option', value: 'Grid-tied & hybrid' },
+      { label: 'Typical lead time', value: '2–6 weeks' }
     ],
-    safetyNotes: [
-      'High-voltage safety protocols',
-      'Authorised personnel only',
-      'Proper isolation and earthing',
-    ],
-    relatedProjects: [],
-    faq: [],
+    icon: 'power'
   },
   {
-    slug: 'electrical-consulting',
-    title: 'Electrical Consulting & Audits',
-    shortDescription: 'Independent electrical consulting, audits and technical advisory services.',
-    description: '[REQUIRES ELSIM APPROVAL] Consulting and audit services. Full offering to be confirmed from official company profile.',
-    icon: 'clipboard',
-    features: [
-      'Electrical system audits',
-      'Compliance reviews',
-      'Energy efficiency assessments',
-      'Technical specifications',
+    slug: 'project-consulting',
+    name: 'Engineering Consulting',
+    shortDescription:
+      'Feasibility studies, technical due diligence and project supervision for owners and developers.',
+    description:
+      'Independent engineering advice at every project stage — feasibility studies, cost estimation, tender documentation and site supervision to protect the client\'s interests through construction.',
+    capabilities: [
+      'Feasibility and technical due diligence',
+      'Cost estimation and BOQ preparation',
+      'Tender documentation and evaluation',
+      'Owner\'s engineer / site supervision',
+      'Handover and defects-liability inspection'
     ],
-    process: [
-      'Briefing and scope definition',
-      'Site investigation',
-      'Analysis and reporting',
-      'Recommendations and follow-up',
+    spec: [
+      { label: 'Engagement', value: 'Fixed-fee or retainer' },
+      { label: 'Reporting', value: 'Weekly site reports' },
+      { label: 'Typical lead time', value: 'Project-dependent' }
     ],
-    safetyNotes: [],
-    relatedProjects: [],
-    faq: [],
+    icon: 'blueprint'
   },
+  {
+    slug: 'maintenance-support',
+    name: 'Maintenance & Support',
+    shortDescription:
+      'Scheduled maintenance contracts and rapid-response repair for electrical and mechanical plant.',
+    description:
+      'Ongoing maintenance agreements that keep electrical panels, generators and mechanical plant running reliably, backed by a call-out team for unplanned failures.',
+    capabilities: [
+      'Scheduled preventive maintenance',
+      'Thermal imaging and panel inspection',
+      'Emergency call-out response',
+      'Spare-parts sourcing',
+      'Maintenance logs and reporting'
+    ],
+    spec: [
+      { label: 'Contract terms', value: 'Monthly, quarterly, annual' },
+      { label: 'Response', value: 'Same-day for contract clients' },
+      { label: 'Coverage', value: 'Greater Accra + regional on request' }
+    ],
+    icon: 'maintenance'
+  }
 ];
 
 export function getServiceBySlug(slug: string): Service | undefined {
   return services.find((s) => s.slug === slug);
-}
-
-export function getAllServiceSlugs(): string[] {
-  return services.map((s) => s.slug);
 }
